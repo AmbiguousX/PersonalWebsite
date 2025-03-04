@@ -1,18 +1,9 @@
 import * as THREE from 'three';
-import { scene, camera } from './setup.js';
+import { camera, scene } from './setup.js';
 
-// Updated Billboard data with dropdown options
+// Simplified Billboard data with direct URLs
 const billboardButtons = [
-    {
-        text: 'Ambiguous',
-        url: 'https://github.com',
-        dropdown: [
-            { text: 'Repositories', action: 'openRepos' },
-            { text: 'Gists', action: 'openGists' },
-            { text: 'Contributions', action: 'openContributions' },
-            { text: 'Profile', action: 'openProfile' }
-        ]
-    },
+    { text: 'GitHub', url: 'https://github.com' },
     { text: 'Portfolio', url: 'https://linkedin.com' },
     { text: 'Music', url: 'https://manifold.gallery/noah' }
 ];
@@ -21,10 +12,6 @@ const billboardButtons = [
 export const billboardMeshes = [];
 export let headPosition = new THREE.Vector3(0, 0, 0);
 export let modelSize = new THREE.Vector3(1, 1, 1);
-
-// Dropdown-specific variables
-let dropdownMeshes = [];
-let activeDropdown = null;
 
 const IS_MOBILE = window.innerWidth < 768;
 
@@ -57,8 +44,9 @@ export function initBillboards(position, size) {
     // Listen for resize events
     window.addEventListener('app-resized', resizeBillboards);
 
-    // Add click handling
+    // Add click handling for both mouse and touch
     window.addEventListener('click', handleBillboardClick);
+    window.addEventListener('touchend', handleBillboardTouch, { passive: false });
 }
 
 // Create a single billboard
@@ -142,99 +130,7 @@ function roundedRect(ctx, x, y, width, height, radius) {
     ctx.closePath();
 }
 
-// Create dropdown menu for GitHub
-function createDropdownMenu(gitHubBillboard) {
-    // Clear any existing dropdown
-    clearDropdown();
-
-    const dropdownOptions = gitHubBillboard.userData.buttonData.dropdown;
-
-    // Calculate dropdown position
-    const basePosition = gitHubBillboard.position.clone();
-
-    // Create dropdown meshes
-    dropdownOptions.forEach((option, index) => {
-        const dropdownCanvas = document.createElement('canvas');
-        const context = dropdownCanvas.getContext('2d');
-        dropdownCanvas.width = 256;
-        dropdownCanvas.height = 128;
-
-        // Clear canvas
-        context.clearRect(0, 0, dropdownCanvas.width, dropdownCanvas.height);
-
-        // Define corner radius
-        const cornerRadius = 20; // Adjust this value to control roundness
-
-        // Create rounded rectangle path
-        roundedRect(context, 0, 0, dropdownCanvas.width, dropdownCanvas.height, cornerRadius);
-
-        // Background fill with rounded corners
-        context.fillStyle = 'rgba(50, 50, 50, 0.8)';
-        context.fill();
-
-        // Add a border if desired (also with rounded corners)
-        context.strokeStyle = 'lightgray';
-        context.lineWidth = 2;
-        context.stroke();
-
-        // Text
-        context.font = 'bold 6px Arial';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillStyle = 'white';
-        context.fillText(option.text, dropdownCanvas.width / 2, dropdownCanvas.height / 2);
-
-        // Create texture
-        const texture = new THREE.CanvasTexture(dropdownCanvas);
-        texture.needsUpdate = true;
-        texture.minFilter = THREE.LinearFilter;
-        texture.generateMipmaps = false;
-
-        // Create material
-        const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        });
-
-        // Create mesh
-        const dropdownMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(1, 0.5),
-            material
-        );
-
-        // Position dropdown items vertically below the GitHub billboard
-        dropdownMesh.position.set(
-            basePosition.x,
-            basePosition.y - 0.6 - (index * 0.6),
-            basePosition.z
-        );
-
-        // Store action in user data
-        dropdownMesh.userData.action = option.action;
-
-        // Add to scene and tracking array
-        scene.add(dropdownMesh);
-        dropdownMeshes.push(dropdownMesh);
-    });
-
-    // Set active dropdown
-    activeDropdown = dropdownOptions;
-}
-
-// Clear dropdown menu
-function clearDropdown() {
-    // Remove dropdown meshes from scene
-    dropdownMeshes.forEach(mesh => {
-        scene.remove(mesh);
-    });
-    // Clear the array
-    dropdownMeshes = [];
-    activeDropdown = null;
-}
-
-// Handle billboard clicks
+// Handle billboard clicks with mouse
 function handleBillboardClick(event) {
     // Raycaster to detect billboard clicks
     const raycaster = new THREE.Raycaster();
@@ -247,53 +143,48 @@ function handleBillboardClick(event) {
     raycaster.setFromCamera(mouse, camera);
 
     // Check intersection with billboards
-    const intersects = raycaster.intersectObjects([...billboardMeshes, ...dropdownMeshes]);
+    const intersects = raycaster.intersectObjects(billboardMeshes);
 
     if (intersects.length > 0) {
         const clickedMesh = intersects[0].object;
 
-        // Handle billboard with dropdown click
-        if (clickedMesh.userData.buttonData &&
-            clickedMesh.userData.buttonData.dropdown) {
-            // Toggle dropdown
-            if (activeDropdown) {
-                clearDropdown();
-            } else {
-                createDropdownMenu(clickedMesh);
-            }
+        // Open URL if available
+        if (clickedMesh.userData.buttonData && clickedMesh.userData.buttonData.url) {
+            window.open(clickedMesh.userData.buttonData.url, '_blank');
         }
-        // Handle dropdown item click
-        else if (clickedMesh.userData.action) {
-            // Perform the associated action
-            handleDropdownAction(clickedMesh.userData.action);
-            // Close dropdown after action
-            clearDropdown();
-        }
-    } else if (activeDropdown) {
-        // Close dropdown if clicked outside
-        clearDropdown();
     }
 }
 
-// Handle dropdown actions
-function handleDropdownAction(action) {
-    console.log(`Executing action: ${action}`);
-    // Add specific logic for each action
-    switch (action) {
-        case 'openRepos':
-            console.log('Opening repositories...');
-            break;
-        case 'openGists':
-            console.log('Opening gists...');
-            break;
-        case 'openContributions':
-            console.log('Showing contributions...');
-            break;
-        case 'openProfile':
-            console.log('Viewing profile...');
-            break;
-        default:
-            console.log('Unknown action');
+// Handle billboard touches on mobile
+function handleBillboardTouch(event) {
+    // Prevent default to avoid double-firing with click events
+    event.preventDefault();
+
+    if (event.changedTouches.length === 0) return;
+
+    // Get the first touch
+    const touch = event.changedTouches[0];
+
+    // Create a raycaster
+    const raycaster = new THREE.Raycaster();
+    const touchPosition = new THREE.Vector2(
+        (touch.clientX / window.innerWidth) * 2 - 1,
+        -(touch.clientY / window.innerHeight) * 2 + 1
+    );
+
+    // Update the raycaster
+    raycaster.setFromCamera(touchPosition, camera);
+
+    // Check for intersections
+    const intersects = raycaster.intersectObjects(billboardMeshes);
+
+    if (intersects.length > 0) {
+        const touchedMesh = intersects[0].object;
+
+        // Open URL if available
+        if (touchedMesh.userData.buttonData && touchedMesh.userData.buttonData.url) {
+            window.open(touchedMesh.userData.buttonData.url, '_blank');
+        }
     }
 }
 
@@ -310,13 +201,6 @@ export function updateBillboards() {
             billboard.lookAt(tempPosition);
         }
     });
-
-    // Update dropdown meshes if they exist
-    dropdownMeshes.forEach(dropdownMesh => {
-        if (dropdownMesh.visible) {
-            dropdownMesh.lookAt(tempPosition);
-        }
-    });
 }
 
 // Resize and reposition billboards
@@ -328,11 +212,6 @@ export function resizeBillboards() {
     // Apply scale to all billboards
     billboardMeshes.forEach(billboard => {
         billboard.scale.set(scaleFactor, scaleFactor, 1);
-    });
-
-    // Apply scale to dropdown meshes
-    dropdownMeshes.forEach(dropdownMesh => {
-        dropdownMesh.scale.set(scaleFactor, scaleFactor, 1);
     });
 
     // Position billboards - vertically on mobile, horizontally on desktop
