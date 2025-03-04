@@ -2,7 +2,10 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="3D Character Viewer">
     <title>3D Character Viewer</title>
     <style>
         canvas {
@@ -20,6 +23,7 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            background-color: #222222;
         }
 
         #loading-screen {
@@ -35,6 +39,7 @@
             align-items: center;
             color: white;
             z-index: 1001;
+            transition: opacity 0.5s ease-in-out;
         }
 
         .progress {
@@ -53,6 +58,15 @@
             border-radius: 10px;
             transition: width 0.3s ease;
         }
+
+        /* Error message styling */
+        .error-message {
+            color: #ff4444;
+            margin-top: 20px;
+            text-align: center;
+            max-width: 80%;
+            display: none;
+        }
     </style>
 </head>
 
@@ -62,9 +76,12 @@
         <div class="progress">
             <div class="progress-bar"></div>
         </div>
+        <div class="error-message">
+            If the model doesn't load, try a different browser or device.
+        </div>
     </div>
 
-    <script async src="https://unpkg.com/es-module-shims/dist/es-module-shims.js"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.7.3/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
@@ -79,6 +96,18 @@
     <script type="module" src="./js/billboards.js"></script>
     <script type="module" src="./js/animation.js"></script>
     <script type="module" src="./js/main.js"></script>
+
+    <!-- Fallback script for error handling -->
+    <script>
+        // Show error message after timeout if still loading
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            const errorMessage = document.querySelector('.error-message');
+            if (loadingScreen && loadingScreen.style.display !== 'none' && errorMessage) {
+                errorMessage.style.display = 'block';
+            }
+        }, 30000); // 30 seconds timeout
+    </script>
 </body>
 
 </html>
