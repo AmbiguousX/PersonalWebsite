@@ -6,7 +6,7 @@ import { updateBillboards } from './billboards.js';
 // Initialize everything
 initScene();
 setupEventListeners();
-loadModel('./cuber.glb'); // Replace with your model path
+loadModel('./noahanims.glb'); // Replace with your model path
 
 // Main animation loop
 function animate() {
