@@ -3,8 +3,8 @@ import { camera, scene } from './setup.js';
 
 // Simplified Billboard data with direct URLs
 const billboardButtons = [
-    { text: 'GitHub', url: 'https://github.com' },
-    { text: 'Portfolio', url: 'https://linkedin.com' },
+    { text: 'Ambiguous', url: 'https://github.com' },
+    { text: 'Portfolio', url: 'https://manifold.gallery/noah' },
     { text: 'Music', url: 'https://manifold.gallery/noah' }
 ];
 
@@ -69,11 +69,11 @@ function createBillboard(text, position) {
         roundedRect(context, 0, 0, canvas.width, canvas.height, cornerRadius);
 
         // Background fill with rounded corners
-        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        context.fillStyle = 'rgb(38, 111, 255)';
         context.fill();
 
         // Text
-        context.font = 'bold 48px Arial';
+        context.font = 'bold 42px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillStyle = 'white';
