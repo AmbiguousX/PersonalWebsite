@@ -3,6 +3,7 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Character Viewer</title>
     <style>
         canvas {
             position: fixed;
@@ -19,33 +20,6 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
-        }
-
-        .audio-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
-            padding: 10px 0;
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-        }
-
-        #audioPlayer {
-            width: 90%;
-            height: 36px;
-            border: none;
-            outline: none;
-        }
-
-        #audioPlayer::-webkit-media-controls-panel {
-            background-color: white;
-        }
-
-        #audioPlayer::-webkit-media-controls-enclosure {
-            background-color: transparent;
         }
 
         #loading-screen {
@@ -90,12 +64,6 @@
         </div>
     </div>
 
-    <div class="audio-container">
-        <audio id="audioPlayer" controls loop>
-            <source src="./audio.mp3" type="audio/mpeg">
-        </audio>
-    </div>
-
     <script async src="https://unpkg.com/es-module-shims/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
@@ -105,228 +73,7 @@
             }
         }
     </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
-        // Check for iOS device
-        const IS_IOS = ['iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'].includes(navigator.platform)
-            || (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-
-        // Loading manager setup
-        const loadingManager = new THREE.LoadingManager();
-        const loadingScreen = document.getElementById('loading-screen');
-        const progressBar = document.querySelector('.progress-bar');
-
-        loadingManager.onProgress = (url, loaded, total) => {
-            const progress = (loaded / total) * 100;
-            progressBar.style.width = progress + '%';
-            console.log(`Loading: ${url} - ${progress}%`);
-        };
-
-        loadingManager.onLoad = () => {
-            loadingScreen.style.display = 'none';
-            console.log('Loading complete!');
-        };
-
-        loadingManager.onError = (url) => {
-            console.error('Error loading:', url);
-        };
-
-        // Scene setup
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(
-            75,                                     // Uniform FOV for all devices
-            window.innerWidth / window.innerHeight,
-            0.01,
-            10000
-        );
-
-        const renderer = new THREE.WebGLRenderer({
-            antialias: !IS_IOS,
-            powerPreference: 'high-performance'
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_IOS ? 2 : 3));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
-        document.body.appendChild(renderer.domElement);
-
-        // Controls setup
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        camera.position.z = 5;
-
-        // Lighting setup
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 10);
-        directionalLight.position.set(5, 5, 5);
-        directionalLight.target.position.set(0, 0, 0);
-        scene.add(ambientLight, directionalLight);
-
-        // Background setup
-        const textureLoader = new THREE.TextureLoader(loadingManager);
-        textureLoader.load('./snow.webp', (texture) => {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;
-            scene.environment = texture;
-        });
-
-        // Animation setup
-        let mixer;
-        let animationAction;
-        let animationDuration = 0;
-        let isPlaying = false;
-        const clock = new THREE.Clock();
-        const audioPlayer = document.getElementById('audioPlayer');
-
-        // Audio event listeners
-        audioPlayer.addEventListener('play', function () {
-            console.log('Play event triggered');
-            isPlaying = true;
-            if (animationAction) {
-                animationAction.paused = false;
-                animationAction.play();
-                if (clock.running === false) {
-                    console.log('Starting clock');
-                    clock.start();
-                }
-            }
-        });
-
-        audioPlayer.addEventListener('pause', function () {
-            console.log('Pause event triggered');
-            isPlaying = false;
-            if (animationAction) {
-                animationAction.paused = true;
-            }
-            if (clock.running === true) {
-                console.log('Stopping clock');
-                clock.stop();
-            }
-        });
-
-        audioPlayer.addEventListener('seeking', () => {
-            if (mixer && animationAction) {
-                const time = audioPlayer.currentTime;
-                mixer.setTime(time);
-                animationAction.time = time;
-                mixer.update(0);
-            }
-        });
-
-        audioPlayer.addEventListener('seeked', () => {
-            if (mixer && animationAction) {
-                const time = audioPlayer.currentTime;
-                mixer.setTime(time);
-                animationAction.time = time;
-                mixer.update(0);
-            }
-        });
-
-        audioPlayer.addEventListener('ended', () => {
-            if (mixer && animationAction) {
-                mixer.setTime(0);
-                animationAction.time = 0;
-                mixer.update(0);
-            }
-        });
-
-        // Load 3D model
-        const loader = new GLTFLoader(loadingManager);
-        loader.load('./OutOfTime2.glb', (gltf) => {
-            const object = gltf.scene;
-            object.updateMatrixWorld(true);
-
-            const box = new THREE.Box3().setFromObject(object);
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-
-            object.position.sub(center);
-            scene.add(object);
-
-            // Camera positioning
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const fov = camera.fov * (Math.PI / 180);
-            const distance = Math.abs(maxDim / Math.tan(fov / 2));
-
-            camera.position.set(0, center.y, distance);
-            controls.target.copy(center);
-            camera.lookAt(center);
-            controls.update();
-            camera.updateProjectionMatrix();
-
-            // Remove zoom restrictions for better mobile interaction
-            controls.minDistance = 0;  // Allow zooming in completely
-            controls.maxDistance = Infinity;  // Allow zooming out freely
-            controls.enableZoom = true;  // Ensure zoom is enabled
-
-            // Animation setup
-            if (gltf.animations.length > 0) {
-                console.log('Setting up animation');
-                mixer = new THREE.AnimationMixer(object);
-                animationAction = mixer.clipAction(gltf.animations[0]);
-                animationDuration = animationAction.getClip().duration;
-                console.log('Animation duration:', animationDuration);
-
-                // Initialize animation state
-                mixer.setTime(0);
-                mixer.update(0);
-
-                // Start the animation but keep it paused
-                animationAction.play();
-                animationAction.paused = true;
-
-                // Reset the animation time
-                animationAction.time = 0;
-
-                // Sync with audio duration
-                audioPlayer.addEventListener('loadedmetadata', () => {
-                    console.log('Audio duration:', audioPlayer.duration);
-                    if (audioPlayer.duration < animationDuration) {
-                        animationDuration = audioPlayer.duration;
-                        console.log('Adjusted animation duration:', animationDuration);
-                    }
-                });
-
-                // If audio is already playing, start the animation
-                if (!audioPlayer.paused) {
-                    console.log('Audio is playing, starting animation');
-                    isPlaying = true;
-                    animationAction.paused = false;
-                    clock.start();
-                }
-            }
-        });
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-
-            if (mixer && isPlaying) {
-                const delta = clock.getDelta();
-                mixer.update(delta);
-                if (animationAction && animationAction.time >= animationDuration) {
-                    console.log('Animation completed');
-                    animationAction.time = 0;
-                    mixer.setTime(0);
-                }
-            }
-
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // Window resize handler
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>
