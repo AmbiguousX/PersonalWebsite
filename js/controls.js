@@ -8,20 +8,13 @@ const pointer = new THREE.Vector2();
 
 // Set up all event listeners
 export function setupEventListeners() {
-    window.addEventListener('click', onPointerClick);
+    // We're removing this click listener as it conflicts with the one in billboards.js
+    // window.addEventListener('click', onPointerClick);
     window.addEventListener('mousemove', onPointerMove);
     window.addEventListener('touchstart', onTouchStart, { passive: false });
 }
 
-// Handle mouse clicks
-function onPointerClick(event) {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    checkIntersection(true);
-}
-
-// Handle mouse movements
+// Handle mouse movements for cursor changes
 function onPointerMove(event) {
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -37,19 +30,17 @@ function onTouchStart(event) {
     pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
 
-    checkIntersection(true);
+    // We'll let billboards.js handle the actual click/touch
+    checkIntersection(false);
 }
 
-// Check for intersections with billboards
+// Check for intersections with billboards (for hover effects only)
 function checkIntersection(isClick) {
     raycaster.setFromCamera(pointer, camera);
     const intersects = raycaster.intersectObjects(billboardMeshes);
 
     if (intersects.length > 0) {
-        if (isClick) {
-            const url = intersects[0].object.userData.url;
-            window.open(url, '_blank');
-        }
+        // Change cursor to pointer when hovering over billboard
         document.body.style.cursor = 'pointer';
         return true;
     } else {
