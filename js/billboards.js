@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, camera, IS_MOBILE } from './setup.js';
+import { scene, camera } from './setup.js';
 
 // Updated Billboard data with dropdown options
 const billboardButtons = [
@@ -25,6 +25,8 @@ export let modelSize = new THREE.Vector3(1, 1, 1);
 // Dropdown-specific variables
 let dropdownMeshes = [];
 let activeDropdown = null;
+
+const IS_MOBILE = window.innerWidth < 768;
 
 // Cache for textures to avoid recreating them
 const textureCache = new Map();
