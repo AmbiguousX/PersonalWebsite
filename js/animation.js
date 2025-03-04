@@ -25,7 +25,7 @@ let faceAction = null;
 let hasFaceAnimation = false;
 
 // Configuration
-const FACE_ANIMATION_INDEX = 3; // Set to your face animation index
+const FACE_ANIMATION_INDEX = 4; // Set to your face animation index
 const CROSSFADE_DURATION = 0.5;
 const MIN_ANIMATION_DURATION = 3000; // 3 seconds
 const MAX_ANIMATION_DURATION = 6000; // 6 seconds
@@ -101,8 +101,6 @@ export function loadModel(modelPath) {
     });
 }
 
-
-
 // Set up all animations from the loaded model
 function setupAnimations(animationClips) {
     if (!animationClips || animationClips.length === 0) return;
@@ -164,7 +162,7 @@ function setupAnimations(animationClips) {
     }
 }
 
-// Smoothly transition to a new animation
+// Smoothly transition to a new animation with random start point
 function fadeToAnimation(newAnimationName, duration = CROSSFADE_DURATION) {
     const newAction = animations[newAnimationName];
 
@@ -184,8 +182,13 @@ function fadeToAnimation(newAnimationName, duration = CROSSFADE_DURATION) {
     // Update animation duration
     currentAnimationDuration = currentAction.getClip().duration;
 
-    // Reset and prepare new action
+    // Start at a random point in the animation (between 10% and 75% of the way through)
+    // This avoids starting right at the end or beginning where animations often have less motion
+    const randomStartPoint = currentAnimationDuration * (0.1 + Math.random() * 0.65);
+
+    // Reset and prepare new action with random start time
     currentAction.reset();
+    currentAction.time = randomStartPoint;
     currentAction.setEffectiveTimeScale(1);
     currentAction.setEffectiveWeight(1);
 
@@ -246,25 +249,28 @@ export function updateAnimation(delta) {
     if (mixer) {
         mixer.update(delta);
 
-        // Ping-pong animation logic
+        // Improved ping-pong animation logic
         if (currentAction) {
-            // Track animation time
-            animTimeCheck += delta * Math.abs(currentAction.timeScale);
+            // Get the current animation time directly from the action rather than tracking
+            // This is more reliable especially when we're starting animations from random points
+            const currentTime = currentAction.time;
 
-            // Check if we need to reverse direction
-            if (!isReversing && animTimeCheck >= currentAnimationDuration * 0.95) {
-                // Reached the end, go backward
-                console.log("Reversing animation direction (playing backward)");
-                currentAction.timeScale = -1;
-                isReversing = true;
-                animTimeCheck = 0;
+            // Check if we need to reverse direction based on actual position in animation
+            if (!isReversing && currentTime >= currentAnimationDuration * 0.9) {
+                // Only log if we're actually changing direction to reduce console spam
+                if (currentAction.timeScale > 0) {
+                    console.log("Reversing animation direction (playing backward)");
+                    currentAction.timeScale = -1;
+                    isReversing = true;
+                }
             }
-            else if (isReversing && animTimeCheck >= currentAnimationDuration * 0.95) {
-                // Reached the beginning, go forward
-                console.log("Resuming forward playback");
-                currentAction.timeScale = 1;
-                isReversing = false;
-                animTimeCheck = 0;
+            else if (isReversing && currentTime <= currentAnimationDuration * 0.1) {
+                // Only log if we're actually changing direction to reduce console spam
+                if (currentAction.timeScale < 0) {
+                    console.log("Resuming forward playback");
+                    currentAction.timeScale = 1;
+                    isReversing = false;
+                }
             }
         }
     }
