@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, camera } from './setup.js';
+import { camera, scene, isMobile } from './setup';
 
 // Updated Billboard data with dropdown options
 const billboardButtons = [
