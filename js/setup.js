@@ -18,6 +18,22 @@ export const loadingManager = new THREE.LoadingManager();
 const loadingScreen = document.getElementById('loading-screen');
 const progressBar = document.querySelector('.progress-bar');
 
+// Function to calculate optimal camera distance based on screen size
+function calculateCameraDistance() {
+    // Base values
+    const baseWidth = 1920;  // Reference width
+    const baseDistance = 5;  // Reference distance
+    const minDistance = 2.5; // Minimum distance (for small screens)
+    const maxDistance = 5.5; // Maximum distance (for very large screens)
+
+    // Calculate proportional distance
+    const currentWidth = window.innerWidth;
+    const scaleFactor = Math.min(1, currentWidth / baseWidth);
+
+    // Scale distance between min and max based on screen width
+    return Math.max(minDistance, Math.min(maxDistance, baseDistance * scaleFactor + 0.5));
+}
+
 // Initialize scene, camera, renderer, and controls
 export function initScene() {
     // Configure loading manager
@@ -54,7 +70,14 @@ export function initScene() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = .05;
-    camera.position.z = 5;
+
+    // Set camera position based on screen size
+    const distance = calculateCameraDistance();
+    camera.position.z = distance;
+
+    // Adjust control limits based on calculated distance
+    controls.minDistance = distance * 0.6;  // Allow some zoom in
+    controls.maxDistance = distance * 1.5;  // Allow some zoom out
 
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3); // Reduced for visible shadows
@@ -95,6 +118,12 @@ export function initScene() {
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
 
+        // Recalculate camera distance on resize
+        const newDistance = calculateCameraDistance();
+        camera.position.z = newDistance;
+
+
+
         // Signal that resize happened (for other modules)
         window.dispatchEvent(new CustomEvent('app-resized'));
     });
@@ -117,5 +146,3 @@ export function enableShadows(object, cast = true, receive = true) {
         }
     });
 }
-
-

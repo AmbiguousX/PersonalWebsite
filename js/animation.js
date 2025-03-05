@@ -95,6 +95,8 @@ export function loadModel(modelPath) {
         camera.lookAt(center);
         controls.update();
         camera.updateProjectionMatrix();
+        controls.minDistance = 1.5;  // Minimum zoom in (can't get closer than this)
+        controls.maxDistance = 100;  // Very large value for practically unlimited zoom out
 
         // Set up animation system
         setupAnimations(gltf.animations);

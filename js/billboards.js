@@ -207,7 +207,10 @@ export function updateBillboards() {
 export function resizeBillboards() {
     // Determine if mobile and calculate scale factor
     const isMobile = window.innerWidth < 768;
-    const scaleFactor = Math.min(1, window.innerWidth / 1000);
+
+    // Use a larger scale for mobile
+    const baseFactor = isMobile ? 1.8 : 1.0;  // Increased mobile size by 80%
+    const scaleFactor = baseFactor * Math.min(1, window.innerWidth / 1000);
 
     // Apply scale to all billboards
     billboardMeshes.forEach(billboard => {
@@ -218,14 +221,14 @@ export function resizeBillboards() {
     billboardButtons.forEach((button, index) => {
         if (billboardMeshes[index]) {
             if (isMobile) {
-                // Stack vertically on mobile
-                const verticalSpacing = 0.7 * scaleFactor;
+                // Stack vertically on mobile with increased spacing
+                const verticalSpacing = 0.9 * scaleFactor;  // Increased spacing
                 const verticalOffset = (index - (billboardButtons.length - 1) / 2) * verticalSpacing;
 
                 billboardMeshes[index].position.set(
                     0,
-                    headPosition.y + 0.5 - verticalOffset,
-                    headPosition.z
+                    headPosition.y + 0.7 - verticalOffset,  // Higher starting position
+                    headPosition.z + 0.2  // Bring slightly forward
                 );
             } else {
                 // Arrange horizontally on desktop
