@@ -24,6 +24,11 @@ let currentAnimationDuration = 0;
 let faceAction = null;
 let hasFaceAnimation = false;
 
+// Face ping-pong animation tracking
+let isFaceReversing = false;
+let faceAnimTimeCheck = 0;
+let faceAnimationDuration = 0;
+
 // Configuration
 const FACE_ANIMATION_INDEX = 4; // Set to your face animation index
 const CROSSFADE_DURATION = 0.5;
@@ -71,6 +76,14 @@ export function loadModel(modelPath) {
                 }
             }
         });
+        character.traverse(node => {
+            if (node.isMesh) {
+                // Simply disable frustum culling for all meshes
+                // This is the most reliable solution and ensures nothing disappears
+                node.frustumCulled = false;
+            }
+        });
+
 
         // Calculate bounding box and position
         const box = new THREE.Box3().setFromObject(character);
@@ -134,8 +147,11 @@ function setupAnimations(animationClips) {
                 faceAction.clampWhenFinished = false;
                 faceAction.play();
 
+                // Store face animation duration for ping-pong
+                faceAnimationDuration = faceAction.getClip().duration;
+
                 hasFaceAnimation = true;
-                console.log(`Facial animation set up: ${clip.name}`);
+                console.log(`Facial animation set up: ${clip.name} with duration ${faceAnimationDuration}`);
             }
         } else {
             // Body animations
@@ -277,9 +293,30 @@ export function updateAnimation(delta) {
         }
     }
 
-    // Update face mixer (if exists)
-    if (faceMixer) {
+    // Update face mixer with ping-pong logic
+    if (faceMixer && faceAction && hasFaceAnimation) {
         faceMixer.update(delta);
+
+        // Apply ping-pong to facial animation
+        const faceCurrentTime = faceAction.time;
+
+        // Check if we need to reverse direction based on actual position in animation
+        if (!isFaceReversing && faceCurrentTime >= faceAnimationDuration * 0.9) {
+            // Only change direction if not already reversed
+            if (faceAction.timeScale > 0) {
+                console.log("Reversing FACE animation direction (playing backward)");
+                faceAction.timeScale = -1;
+                isFaceReversing = true;
+            }
+        }
+        else if (isFaceReversing && faceCurrentTime <= faceAnimationDuration * 0.1) {
+            // Only change direction if already reversed
+            if (faceAction.timeScale < 0) {
+                console.log("Resuming forward FACE playback");
+                faceAction.timeScale = 1;
+                isFaceReversing = false;
+            }
+        }
     }
 }
 

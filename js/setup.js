@@ -16,7 +16,7 @@ export const IS_IOS = ['iPad Simulator', 'iPhone Simulator', 'iPod Simulator', '
 // Loading manager
 export const loadingManager = new THREE.LoadingManager();
 const loadingScreen = document.getElementById('loading-screen');
-const progressBar = document.querySelector('.progress-bar');
+// No longer need progress bar reference since we're using a spinner
 
 // Function to calculate optimal camera distance based on screen size
 function calculateCameraDistance() {
@@ -38,8 +38,8 @@ function calculateCameraDistance() {
 export function initScene() {
     // Configure loading manager
     loadingManager.onProgress = (url, loaded, total) => {
-        const progress = (loaded / total) * 100;
-        progressBar.style.width = progress + '%';
+        // With a spinner, we don't need to update progress percentage
+        // The spinner animation runs continuously
     };
 
     loadingManager.onLoad = () => {
@@ -48,6 +48,11 @@ export function initScene() {
 
     loadingManager.onError = (url) => {
         console.error('Error loading:', url);
+        // Show error message immediately when an error occurs
+        const errorMessage = document.querySelector('.error-message');
+        if (errorMessage) {
+            errorMessage.style.display = 'block';
+        }
     };
 
     // Set up renderer with shadow support
@@ -121,8 +126,6 @@ export function initScene() {
         // Recalculate camera distance on resize
         const newDistance = calculateCameraDistance();
         camera.position.z = newDistance;
-
-
 
         // Signal that resize happened (for other modules)
         window.dispatchEvent(new CustomEvent('app-resized'));

@@ -3,9 +3,9 @@ import { camera, scene } from './setup.js';
 
 // Simplified Billboard data with direct URLs
 const billboardButtons = [
-    { text: 'Ambiguous', url: 'https://www.instagram.com/ambig_art/' },
     { text: 'Portfolio', url: 'https://manifold.gallery/noah' },
-    { text: 'Music', url: 'https://open.spotify.com/artist/3MvKEZQDRekYz5G9UBldff?si=B5c-uHGARW2HEBpjVJovew' }
+    { text: 'Music', url: 'https://open.spotify.com/artist/3MvKEZQDRekYz5G9UBldff?si=B5c-uHGARW2HEBpjVJovew' },
+    { text: 'Instagram', url: 'https://www.instagram.com/ambig_art/' }
 ];
 
 // Global references

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="3D Character Viewer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <title>Noah Mitchell</title>
     <style>
         canvas {
@@ -42,21 +43,25 @@
             transition: opacity 0.5s ease-in-out;
         }
 
-        .progress {
-            width: 80%;
-            max-width: 300px;
-            height: 20px;
-            background: #333;
-            border-radius: 10px;
-            margin-top: 20px;
+        /* Spinner styling */
+        .spinner {
+            width: 60px;
+            height: 60px;
+            margin: 20px auto;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s linear infinite;
         }
 
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: #fff;
-            border-radius: 10px;
-            transition: width 0.3s ease;
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Error message styling */
@@ -73,9 +78,7 @@
 <body>
     <div id="loading-screen">
         <h2>Noah Is Loading. . .</h2>
-        <div class="progress">
-            <div class="progress-bar"></div>
-        </div>
+        <div class="spinner"></div>
         <div class="error-message">
             If the model doesn't load, try a different browser or device.
         </div>
